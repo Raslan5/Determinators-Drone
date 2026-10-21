@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { physics } from "../content.js";
-import { Say, useMode } from "../lib/mode.jsx";
+import { GhostWord, SplitWords } from "./Reveal.jsx";
+import { ghosts, physics, ui } from "../content.js";
+import { Rich, fill } from "../lib/text.jsx";
+import { useEffect, useRef, useState } from "react";
+import { Calibration, MissionPlanner } from "./PreFlight.jsx";
 import { MOTORS } from "./DroneArt.jsx";
 
 /* Illustrative demands for each move (0..1). Mixer for ArduCopter Quad-X,
@@ -26,10 +28,11 @@ const STICKS = {
   right: { left: [0, 0], right: [0.75, 0] },
   turn: { left: [0.75, 0], right: [0, 0] },
 };
-const NAMES = { FR: "Front right", RL: "Rear left", FL: "Front left", RR: "Rear right" };
+const t = ui.physics;
+const pt = ui.ptf;
+const TAB_IDS = ["fly", "calibration", "planner"];
+const NAMES = t.names;
 const POS = { FR: [283, 117], RL: [117, 283], FL: [117, 117], RR: [283, 283] };
-
-const term = (sign, name) => `${sign > 0 ? "+" : "\u2212"} ${name}`;
 
 const output = (move, pos) => {
   const d = DEMAND[move];
@@ -38,20 +41,82 @@ const output = (move, pos) => {
 };
 
 export default function HowItFlies() {
-  const { mode } = useMode();
   const [move, setMove] = useState("hover");
   const current = physics.moves.find((m) => m.id === move);
-  const tech = mode === "tech";
+  const [tab, setTab] = useState("fly");
+  const tabRefs = useRef({});
+
+  /* Links to "#previous-to-flight-calibration" (Journey step 07) open the Calibration tab. */
+  useEffect(() => {
+    let timer;
+    const open = () => {
+      setTab("calibration");
+      /* Move focus to the tab after the switch; preventScroll leaves the native/CSS
+         scroll (which honours prefers-reduced-motion) untouched. */
+      clearTimeout(timer);
+      timer = setTimeout(() => tabRefs.current.calibration?.focus({ preventScroll: true }), 50);
+    };
+    const onClick = (e) => {
+      if (e.target.closest?.('a[href$="previous-to-flight-calibration"]')) open();
+    };
+    const onHash = () => {
+      if (window.location.hash.endsWith("previous-to-flight-calibration")) open();
+    };
+    onHash();
+    document.addEventListener("click", onClick);
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", onClick);
+      window.removeEventListener("hashchange", onHash);
+    };
+  }, []);
+
+  const onTabKey = (e) => {
+    const i = TAB_IDS.indexOf(tab);
+    let n = null;
+    if (e.key === "ArrowRight") n = (i + 1) % TAB_IDS.length;
+    else if (e.key === "ArrowLeft") n = (i - 1 + TAB_IDS.length) % TAB_IDS.length;
+    else if (e.key === "Home") n = 0;
+    else if (e.key === "End") n = TAB_IDS.length - 1;
+    if (n === null) return;
+    e.preventDefault();
+    setTab(TAB_IDS[n]);
+    tabRefs.current[TAB_IDS[n]]?.focus();
+  };
 
   return (
-    <section id="physics" className="section surface-paper" data-surface="paper">
+    <section id="physics" className="section surface-paper" data-surface="paper" data-wave>
+      <GhostWord text={ghosts.physics} />
       <div className="wrap">
+        <span id="previous-to-flight-calibration" className="ptf-anchor" />
         <div className="section-head">
-          <h2 className="h2">{physics.title}</h2>
-          <Say v={physics.lead} as="p" className="lead" />
+          <SplitWords as="h2" className="h2" text={pt.title} />
         </div>
 
-        <div className="moves" role="group" aria-label="Choose a move">
+        <div className="ptf-tabs" role="tablist" aria-label={pt.tabsLabel} onKeyDown={onTabKey}>
+          {TAB_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              id={`ptf-tab-${id}`}
+              aria-selected={tab === id}
+              aria-controls={`ptf-panel-${id}`}
+              tabIndex={tab === id ? 0 : -1}
+              className="ptf-tabs__tab"
+              ref={(el) => (tabRefs.current[id] = el)}
+              onClick={() => setTab(id)}
+            >
+              {pt.tabs[id]}
+            </button>
+          ))}
+        </div>
+
+        <div role="tabpanel" id="ptf-panel-fly" aria-labelledby="ptf-tab-fly" hidden={tab !== "fly"} tabIndex={0} className="ptf-panel">
+        <p className="ptf-cal__hint"><Rich text={physics.lead} /></p>
+
+        <div className="moves" role="group" aria-label={t.moves}>
           {physics.moves.map((m) => (
             <button key={m.id} type="button" className="moves__btn" aria-pressed={move === m.id} onClick={() => setMove(m.id)}>
               {m.label}
@@ -61,72 +126,37 @@ export default function HowItFlies() {
 
         <div className="mixer">
           <figure className="mixer__art">
-            <Schematic move={move} tech={tech} />
+            <Schematic move={move} />
           </figure>
 
           <div className="mixer__info" aria-live="polite">
             <h3 className="h3">{current.label}</h3>
-            <Say v={{ simple: current.simple, tech: current.tech }} as="p" className="mixer__text" key={move} />
+            <p className="mixer__text" key={move}><Rich text={current.text} /></p>
 
             <div className="sticks">
-              <Stick side="left" pos={STICKS[move].left} tech={tech} />
-              <Stick side="right" pos={STICKS[move].right} tech={tech} />
+              <Stick side="left" pos={STICKS[move].left} />
+              <Stick side="right" pos={STICKS[move].right} />
             </div>
-
-            {tech ? (
-              <div className="swap">
-                <table className="mix-table">
-                  <caption className="sr-only">Motor outputs for this move (illustrative)</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Motor</th>
-                      <th scope="col">Position</th>
-                      <th scope="col">Spins</th>
-                      <th scope="col" className="num">
-                        Output
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOTORS.map((m) => {
-                      const v = output(move, m.pos);
-                      const delta = v - 0.5;
-                      return (
-                        <tr key={m.n} className={delta > 0.001 ? "up" : delta < -0.001 ? "down" : undefined}>
-                          <td>M{m.n}</td>
-                          <td>{NAMES[m.pos]}</td>
-                          <td>{m.dir.toUpperCase()}</td>
-                          <td className="num">{Math.round(1000 + 1000 * v)} µs</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <p className="mixer__formula">{physics.mixerIntro}</p>
-                <ul className="equations">
-                  {MOTORS.map((m) => (
-                    <li key={m.n}>
-                      <span className="equations__lhs">M{m.n}</span>
-                      <span>= T {term(MIX[m.pos].R, "R")} {term(MIX[m.pos].P, "P")} {term(MIX[m.pos].Y, "Y")}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mixer__formula">{physics.mixerOutro}</p>
-                <p className="mixer__note">Outputs are illustrative ESC pulse widths; real values depend on weight and battery.</p>
-              </div>
-            ) : null}
           </div>
+        </div>
+        </div>
+
+        <div role="tabpanel" id="ptf-panel-calibration" aria-labelledby="ptf-tab-calibration" hidden={tab !== "calibration"} tabIndex={0} className="ptf-panel">
+          <Calibration />
+        </div>
+        <div role="tabpanel" id="ptf-panel-planner" aria-labelledby="ptf-tab-planner" hidden={tab !== "planner"} tabIndex={0} className="ptf-panel">
+          <MissionPlanner />
         </div>
       </div>
     </section>
   );
 }
 
-function Schematic({ move, tech }) {
+function Schematic({ move }) {
   return (
-    <svg viewBox="0 0 400 400" className={`schematic schematic--${move}`} role="img" aria-label={`Top view of the drone during the move: ${move}. Larger orange discs mean faster motors.`}>
+    <svg viewBox="0 0 400 400" className={`schematic schematic--${move}`} role="img" aria-label={fill(t.schematic, { move })}>
       <text x="200" y="24" textAnchor="middle" className="schematic__front">
-        Front
+        {t.front}
       </text>
       <path d="M192 38l8-8 8 8" className="schematic__front-mark" />
 
@@ -150,7 +180,7 @@ function Schematic({ move, tech }) {
         const p1 = [x + R * Math.cos((a1 * Math.PI) / 180), y + R * Math.sin((a1 * Math.PI) / 180)];
         const sweep = cw ? 1 : 0;
         const tangent = cw ? a1 + 90 : a1 - 90;
-        const label = tech ? `M${m.n} ${Math.round(1000 + 1000 * v)} µs` : `${Math.round(v * 100)}%`;
+        const label = `${Math.round(v * 100)}%`;
         const ly = y < 200 ? y - 60 : y + 72;
         return (
           <g key={m.n}>
@@ -194,20 +224,13 @@ function Schematic({ move, tech }) {
   );
 }
 
-function Stick({ side, pos, tech }) {
+function Stick({ side, pos }) {
   const [x, y] = pos;
-  const label =
-    side === "left"
-      ? tech
-        ? "Left stick: throttle CH3, yaw CH4"
-        : "Left stick"
-      : tech
-        ? "Right stick: pitch CH2, roll CH1"
-        : "Right stick";
+  const label = side === "left" ? t.leftStick : t.rightStick;
   const moved = x !== 0 || y !== 0;
   return (
     <figure className={`stick${moved ? " is-moved" : ""}`}>
-      <svg viewBox="0 0 100 100" role="img" aria-label={`${label}${moved ? ", pushed" : ", centred"}`}>
+      <svg viewBox="0 0 100 100" role="img" aria-label={`${label}${moved ? t.pushed : t.centred}`}>
         <rect x="4" y="4" width="92" height="92" rx="14" className="stick__frame" />
         <path d="M50 14V86M14 50H86" className="stick__cross" />
         <circle cx={50 + x * 36} cy={50 - y * 36} r="11" className="stick__knob" />

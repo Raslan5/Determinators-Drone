@@ -1,5 +1,6 @@
 import { site } from "../content.js";
 import { useLightbox } from "./Lightbox.jsx";
+import { fill } from "../lib/text.jsx";
 import { Glyph } from "./Glyphs.jsx";
 import { Icon } from "./Icons.jsx";
 
@@ -30,7 +31,7 @@ export default function Media({ items, glyph = "box", hint, label, layout = "lea
   return (
     <div className={`media media--${layout}`}>
       <figure className="media__main">
-        <button type="button" className="media__open" onClick={() => open(lightboxItems, 0)} aria-label={`Open photo: ${first.caption || label}`}>
+        <button type="button" className="media__open" onClick={() => open(lightboxItems, 0)} aria-label={fill(site.openPhoto, { caption: first.caption || label })}>
           <Thumb item={first} alt={first.caption || label} />
         </button>
         {first.caption ? <figcaption className="media__caption">{first.caption}</figcaption> : null}
@@ -39,7 +40,7 @@ export default function Media({ items, glyph = "box", hint, label, layout = "lea
         <ul className="media__thumbs">
           {shown.map((it, i) => (
             <li key={it.url}>
-              <button type="button" className="media__open" onClick={() => open(lightboxItems, i + 1)} aria-label={`Open photo: ${it.caption || label}`}>
+              <button type="button" className="media__open" onClick={() => open(lightboxItems, i + 1)} aria-label={fill(site.openPhoto, { caption: it.caption || label })}>
                 <Thumb item={it} alt={it.caption || label} />
                 {more > 0 && i === shown.length - 1 ? <span className="media__more">+{more}</span> : null}
               </button>

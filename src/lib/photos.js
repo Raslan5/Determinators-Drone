@@ -1,22 +1,14 @@
 /*
-  Finds your photos automatically. You never need to edit this file.
-
-  src/photos/steps/   photos of the build steps, named by step number:
-                      01-box.jpg, 01-parts.jpg, 02-radio.jpg ...
-  src/photos/flight/  flight photos and short videos (.mp4) for the gallery
-  src/photos/team/    portraits: 1.jpg, 2.jpg, 3.jpg (same order as in content.js)
-  src/photos/logs/    screenshots of your log graphs from Mission Planner
-
-  The words after the number become the caption:
-  "03-arms-on-the-body.jpg" is shown as "Arms on the body".
-  Camera names like IMG_1234 get no caption.
+  Photo discovery: one folder per section under src/photos/,
+  e.g. "home/home_title" or "phase-1/ph1_step03".
 */
 
+
 const images = import.meta.glob(
-  "../photos/*/*.{jpg,jpeg,png,webp,avif,gif,JPG,JPEG,PNG,WEBP,AVIF,GIF}",
+  "../photos/**/*.{jpg,jpeg,png,webp,avif,gif,JPG,JPEG,PNG,WEBP,AVIF,GIF}",
   { eager: true, import: "default" },
 );
-const videos = import.meta.glob("../photos/*/*.{mp4,webm,m4v,MP4,WEBM,M4V}", {
+const videos = import.meta.glob("../photos/**/*.{mp4,webm,m4v,MP4,WEBM,M4V}", {
   eager: true,
   import: "default",
 });
@@ -35,11 +27,11 @@ export function captionFrom(base) {
 }
 
 function toItem(path, url, type) {
-  const segments = path.split("/");
+  const segments = path.replace(/^\.\.\/photos\//, "").split("/");
   const file = segments[segments.length - 1];
   const folder = segments[segments.length - 2];
   const base = file.replace(/\.[^.]+$/, "");
-  return { url, type, folder, file, base, caption: captionFrom(base) };
+  return { url, type, folder, file, base, caption: captionFrom(base), dir: segments.slice(0, -1).join("/") };
 }
 
 const all = [
@@ -47,43 +39,20 @@ const all = [
   ...Object.entries(videos).map(([p, u]) => toItem(p, u, "video")),
 ].sort((a, b) => collator.compare(a.file, b.file));
 
-export const inFolder = (folder) => all.filter((x) => x.folder === folder);
+/** Items in a folder path such as "phase-1/ph1_step03" and any of its subfolders, in natural name order. */
+export const inV2Folder = (dir) => {
+  const prefix = dir.replace(/\/+$/, "") + "/";
+  return all.filter((x) => x.dir === dir || (x.dir + "/").startsWith(prefix));
+};
 
-/** Files in a folder whose name starts with the number n (01, 1, 01b ...). */
-export function startingWith(folder, n) {
+/** Files in a folder path whose name starts with the number n (01, 1, 01b ...). */
+export function startingWithV2(dir, n) {
   const re = new RegExp(`^0*${n}(?!\\d)`);
-  return inFolder(folder).filter((x) => re.test(x.base));
+  return inV2Folder(dir).filter((x) => re.test(x.base));
 }
 
-/* Optional flight log: a CSV with CTUN messages, see README. */
-const csvFiles = import.meta.glob("../flight-log/*.csv", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-});
-
-export function readAltitudeLog() {
-  const text = Object.values(csvFiles)[0];
-  if (!text) return null;
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 3) return null;
-  const header = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-  const find = (...names) => header.findIndex((h) => names.some((n) => h.toLowerCase() === n.toLowerCase()));
-  const iTime = find("TimeUS", "timestamp", "time", "t");
-  const iAlt = find("Alt", "CTUN.Alt", "altitude");
-  const iDAlt = find("DAlt", "CTUN.DAlt");
-  if (iTime < 0 || iAlt < 0) return null;
-  const isMicro = header[iTime].toLowerCase() === "timeus";
-  const rows = [];
-  for (const line of lines.slice(1)) {
-    const cells = line.split(",");
-    const t = parseFloat(cells[iTime]);
-    const alt = parseFloat(cells[iAlt]);
-    if (!Number.isFinite(t) || !Number.isFinite(alt)) continue;
-    const dalt = iDAlt >= 0 ? parseFloat(cells[iDAlt]) : NaN;
-    rows.push({ t: isMicro ? t / 1e6 : t, alt, dalt: Number.isFinite(dalt) ? dalt : null });
-  }
-  if (rows.length < 2) return null;
-  const t0 = rows[0].t;
-  return rows.map((r) => ({ ...r, t: r.t - t0 }));
+/** Files in a folder (last path segment) whose name starts with the number n (01, 1, 01b ...). */
+export function startingWith(folder, n) {
+  const re = new RegExp(`^0*${n}(?!\\d)`);
+  return all.filter((x) => x.folder === folder).filter((x) => re.test(x.base));
 }

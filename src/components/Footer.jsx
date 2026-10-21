@@ -1,29 +1,34 @@
-import { footer, site } from "../content.js";
 import { Rich } from "../lib/text.jsx";
+import { site, ui } from "../content.js";
 import { BrandMark } from "./Nav.jsx";
+
+const safeUrl = (u) => (typeof u === "string" && u.startsWith("https://") ? u : null);
 
 export default function Footer() {
   const c = site.course;
+  const courseUrl = safeUrl(c.url);
+  const t = ui.footer;
   return (
-    <footer className="footer surface-ink" data-surface="ink">
+    <footer className="footer surface-ink" data-surface="ink" data-wave>
       <div className="wrap">
-        <p className="footer__next">{footer.next}</p>
-        <p className="footer__next-text">{footer.nextText}</p>
-
         <div className="footer__grid">
           <div>
-            <h2 className="footer__head">The course</h2>
+            <h2 className="footer__head">{t.course}</h2>
             <p>
-              <a href={c.url} target="_blank" rel="noreferrer">
-                {c.name}
-              </a>
+              {courseUrl ? (
+                <a href={courseUrl} target="_blank" rel="noopener noreferrer">
+                  {c.name}
+                </a>
+              ) : (
+                c.name
+              )}
             </p>
             <p className="footer__muted">
               {c.school}, {c.university}
             </p>
           </div>
           <div>
-            <h2 className="footer__head">Where</h2>
+            <h2 className="footer__head">{t.where}</h2>
             <p className="footer__muted">
               {c.address.map((line) => (
                 <span key={line} className="footer__line">
@@ -33,7 +38,7 @@ export default function Footer() {
             </p>
           </div>
           <div>
-            <h2 className="footer__head">Contact</h2>
+            <h2 className="footer__head">{t.contact}</h2>
             <p>
               <Rich text={site.contactEmail} />
             </p>
@@ -44,11 +49,11 @@ export default function Footer() {
           <span className="footer__brand">
             <BrandMark size={18} />
             <span>
-              © {site.year} <Rich text={site.teamName} />. Photos by the team.
+              © {site.year} <Rich text={site.teamName} />. {t.credit}
             </span>
           </span>
           <a href="#top" className="footer__top">
-            Back to top
+            {t.top}
           </a>
         </div>
       </div>

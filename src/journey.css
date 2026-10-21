@@ -1,0 +1,173 @@
+/* Journey: six steps, orange cube boxes (85% of the window) alternate right/left; the number lives
+   in the free 15%. Site rules: rounded boxes, grain veil on orange, display numerals,
+   1px dashed empty states, double focus ring, no shadows. */
+.journey { position: relative; overflow-x: hidden; overflow-x: clip; }
+.journey__list {
+  position: relative;
+  list-style: none;
+  margin: clamp(40px, 6vw, 88px) 0 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(48px, 7vw, 112px);
+}
+
+.journey__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  padding-left: 44px;
+}
+.journey__box { position: relative; display: grid; gap: 12px; align-items: start; }
+.journey__num {
+  font-family: var(--font-display);
+  font-size: calc(clamp(3rem, 10vw, 6rem) * var(--display-scale));
+  font-weight: var(--display-weight);
+  line-height: 0.9;
+  letter-spacing: var(--display-track);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  background: transparent;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0;
+  position: relative;
+  z-index: 1;
+}
+.journey__card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: clamp(20px, 3vw, 40px);
+  background: var(--cube);
+  color: var(--cube-ink);
+  border-radius: 1.5rem;
+  isolation: isolate;
+  overflow: clip;
+}
+.journey__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--grain-card-opacity);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+.journey__title { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(var(--t-xl) * var(--display-scale)); line-height: var(--display-leading); letter-spacing: var(--display-track); }
+.journey__text { margin: 0; font-size: var(--t-md); line-height: 1.5; max-width: none; }
+.journey__slot { min-width: 0; }
+.journey__photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.journey__photo {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-box);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--paper);
+}
+.journey__photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.journey__hole {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--cube-ink);
+  border-radius: var(--radius-box);
+  background: var(--box-ink);
+  color: var(--cube-ink);
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.journey__card :is(a, button, [tabindex]):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 2px var(--paper); }
+.journey__photo:hover img { transform: scale(1.04); }
+
+/* Entrance: only when scripting is active; content stays visible otherwise. */
+@media (prefers-reduced-motion: no-preference) {
+  .journey__photo img { transition: transform 0.35s ease; }
+  .journey__list--js .journey__item[data-seen="false"] .journey__num,
+  .journey__list--js .journey__item[data-seen="false"] .journey__card { opacity: 0; transform: translateY(24px); }
+  .journey__list--js .journey__item[data-seen="false"][data-side="right"] .journey__card { transform: translate(24px, 0); }
+  .journey__list--js .journey__item[data-seen="false"][data-side="left"] .journey__card { transform: translate(-24px, 0); }
+  .journey__num,
+  .journey__card { transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .journey__card { transition-delay: 0.08s; }
+}
+
+@media (min-width: 900px) {
+  /* Break out of the narrow container: the list spans the full window. */
+  .journey__list { width: 100vw; margin-left: calc(50% - 50vw); }
+  .journey__item { display: block; padding-left: 0; }
+  .journey__box { display: block; width: calc(85% - var(--gutter)); }
+  .journey__item[data-side="right"] .journey__box { margin-left: auto; margin-right: var(--gutter); }
+  .journey__item[data-side="left"] .journey__box { margin-right: auto; margin-left: var(--gutter); }
+  .journey__num { position: absolute; top: 0; width: 15%; padding-block: 4px; display: grid; place-items: center; text-align: center; }
+  .journey__item[data-side="right"] .journey__num { right: 100%; }
+  .journey__item[data-side="left"] .journey__num { left: 100%; }
+  .journey__card { border-radius: 2rem; }
+}
+
+/* Step 2: the components breakdown sits straight on the page (no orange box, no dark panel). */
+.journey__card--bare { background: transparent; color: var(--fg); overflow: visible; padding-inline: 0; }
+.journey__card--bare::after { content: none; }
+.journey__card--bare .inside--embed { background: transparent; display: grid; gap: 16px; justify-items: stretch; width: 100%; min-width: 0; }
+.journey__card--bare .inside--embed > * { max-width: 100%; min-width: 0; }
+.journey__card--bare .inside__hole:has(.photoroll) { display: block; width: 100%; aspect-ratio: auto; justify-self: stretch; }
+.journey__card--bare .inside__hole .photoroll { width: 100%; }
+.journey__card--bare .inside__lines { display: none; }
+.journey__card--bare .inside__view { justify-self: start; }
+.journey__card--bare :is(a, button, [tabindex]):focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; box-shadow: 0 0 0 2px var(--bg); }
+
+/* PhotoRoller inside the orange step cards: panel stands out from the card */
+.photoroll--journey { margin-top: 0; }
+.journey__card .photoroll--journey .photoroll__card,
+.journey__card .photoroll__panel { border-color: var(--cube-ink); }
+.journey__card .photoroll__panel { background: var(--cube-deep); color: var(--cube-ink); }
+.journey__card .photoroll--journey .photoroll__card:focus-visible,
+.journey__card .photoroll--journey .photoroll__close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 4px var(--paper); }
+
+/* Slider: black track, orange progress + thumb (cards stay orange) */
+.photoroll--journey .photoroll__slider { -webkit-appearance: none; appearance: none; height: 1.75rem; background: transparent; accent-color: var(--cube); }
+.photoroll--journey .photoroll__slider::-webkit-slider-runnable-track { height: 0.5rem; border-radius: 999px; background: var(--ink); border: 1px solid var(--carbon-1); }
+.photoroll--journey .photoroll__slider::-moz-range-track { height: 0.5rem; border-radius: 999px; background: var(--ink); border: 1px solid var(--carbon-1); }
+.photoroll--journey .photoroll__slider::-moz-range-progress { height: 0.5rem; border-radius: 999px; background: var(--cube); }
+.photoroll--journey .photoroll__slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 1.5rem; height: 1.5rem; margin-top: calc(-0.75rem + 0.25rem - 1px); border-radius: 50%; background: var(--cube); border: 2px solid var(--ink); cursor: grab; transition: transform 0.15s ease; }
+.photoroll--journey .photoroll__slider::-moz-range-thumb { width: 1.5rem; height: 1.5rem; box-sizing: border-box; border-radius: 50%; background: var(--cube); border: 2px solid var(--ink); cursor: grab; transition: transform 0.15s ease; }
+.photoroll--journey .photoroll__slider:hover::-webkit-slider-thumb { transform: scale(1.12); }
+.photoroll--journey .photoroll__slider:hover::-moz-range-thumb { transform: scale(1.12); }
+.photoroll--journey .photoroll__slider:active::-webkit-slider-thumb { transform: scale(0.96); cursor: grabbing; }
+.photoroll--journey .photoroll__slider:active::-moz-range-thumb { transform: scale(0.96); cursor: grabbing; }
+.photoroll--journey .photoroll__slider:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; box-shadow: 0 0 0 5px var(--paper); border-radius: 999px; }
+@media (prefers-reduced-motion: reduce) {
+  .photoroll--journey .photoroll__slider::-webkit-slider-thumb,
+  .photoroll--journey .photoroll__slider::-moz-range-thumb { transition: none; transform: none; }
+}
+.journey__card .photoroll--journey { --roll-w: min(26rem, 46cqw); }
+.journey__card .photoroll--journey .photoroll__item { flex-basis: 54%; }
+@media (min-width: 900px) { .journey__card .photoroll--journey .photoroll__item { flex-basis: auto; } }
+
+/* Step bodies: lists and links */
+.journey__card .journey__text + .journey__text,
+.journey__card .journey__steps { margin-top: 0.75em; }
+.journey__steps { margin: 0; padding-left: 1.4em; max-width: none; font-size: var(--t-md); line-height: 1.5; }
+.journey__steps li + li { margin-top: 0.5em; }
+.journey__link { color: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.journey__link:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+
+.inside__parts { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; width: 100%; margin: 0.9rem 0 0; padding: 0; list-style: none; }
+.inside__parts li { flex: 1 1 0; min-width: 96px; display: flex; justify-content: center; padding: 0; background: none; border: 0; box-shadow: none; }
+.inside__parts img { display: block; width: 100%; height: auto; max-height: 180px; object-fit: contain; margin: 0 auto; background: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; }
