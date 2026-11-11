@@ -18,27 +18,18 @@ function slotOf(i, idx, n) {
 
 const titleOf = (it) => it.caption || t.titleGap;
 
-function Panel({ item, sample, id, panelId, onClose, closeRef }) {
+function Panel({ item, sample, panelId, onClose, closeRef }) {
   const title = titleOf(item);
   return (
-    <div className="photoroll__panel" id={panelId} role="region" aria-labelledby={id}>
+    <div className="photoroll__panel" id={panelId} role="region" aria-label={title}>
       <button type="button" className="photoroll__close" ref={closeRef} aria-label={t.close} onClick={onClose}>
         <span aria-hidden="true">{"×"}</span>
       </button>
-      <div className="photoroll__text">
-        <h3 className="photoroll__title" id={id}>
-          <Rich text={title} />
-        </h3>
-        <h4 className="photoroll__head">{t.explainHead}</h4>
-        <p>
-          <Rich text={sample ? t.sampleText : t.explainGap} />
-        </p>
-      </div>
       <div className="photoroll__media">
         {sample ? (
           <div className="photoroll__ph" aria-hidden="true" />
         ) : item.type === "video" ? (
-          <video src={item.url} controls playsInline preload="metadata" aria-label={item.caption || t.altGap} />
+          <video src={item.url} poster={item.poster} controls playsInline preload="none" aria-label={item.caption || t.videoGap} />
         ) : (
           <img src={item.url} alt={item.caption || t.altGap} decoding="async" />
         )}
@@ -131,7 +122,7 @@ export default function PhotoRoller({ items: real, label = t.rollerLabel, classN
       first.current = false;
       return;
     }
-    setLive(fill(t.announce, { i: idx + 1, n }));
+    setLive(fill(items[idx]?.type === "video" ? t.announceVideo : t.announce, { i: idx + 1, n }));
   }, [idx, n]);
 
   if (!n) return <p className="photoroll__empty"><Rich text={t.empty} /></p>;
@@ -178,7 +169,7 @@ export default function PhotoRoller({ items: real, label = t.rollerLabel, classN
                     cards.current[i] = el;
                   }}
                   tabIndex={(!wide || main) && open === null ? 0 : -1}
-                  aria-label={fill(sample ? t.sampleOpen : t.open, { i: i + 1, n, title: sample ? title : it.caption || t.altGap })}
+                  aria-label={fill(sample ? t.sampleOpen : it.type === "video" ? t.openVideo : t.open, { i: i + 1, n, title: sample ? title : it.caption || (it.type === "video" ? t.videoGap : t.altGap) })}
                   aria-expanded={!wide || main ? (isOpen ? "true" : "false") : undefined}
                   aria-controls={isOpen ? pid + "-panel" : undefined}
                   onClick={() => (main || !wide ? openAt(i) : turnTo(i))}
@@ -196,7 +187,7 @@ export default function PhotoRoller({ items: real, label = t.rollerLabel, classN
                     <Thumb item={it} alt={it.caption || t.altGap} />
                   )}
                 </button>
-                {isOpen ? <Panel item={it} sample={sample} id={pid} panelId={pid + "-panel"} onClose={() => close(true)} closeRef={closeRef} /> : null}
+                {isOpen ? <Panel item={it} sample={sample} panelId={pid + "-panel"} onClose={() => close(true)} closeRef={closeRef} /> : null}
               </li>
             );
           })}
@@ -211,7 +202,7 @@ export default function PhotoRoller({ items: real, label = t.rollerLabel, classN
           step={1}
           value={idx}
           aria-label={t.sliderLabel}
-          aria-valuetext={fill(t.sliderValue, { i: idx + 1, n })}
+          aria-valuetext={fill(items[idx]?.type === "video" ? t.sliderValueVideo : t.sliderValue, { i: idx + 1, n })}
           disabled={open !== null}
           onChange={(e) => turnTo(Number(e.target.value))}
         />

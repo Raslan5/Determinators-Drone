@@ -68,27 +68,50 @@ export function spring({ from = 0, to = 1, tension = 180, friction = 26, mass = 
 
 let lenis = null;
 let lenisRaf = 0;
+let wakeLenis = () => {};
 
 export function startLenis() {
   if (lenis || !motionOK()) return lenis;
   lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+  let idle = 0;
+  let lastPos = -1;
   const loop = (t) => {
-    lenis?.raf(t);
-    lenisRaf = requestAnimationFrame(loop);
+    lenisRaf = 0;
+    if (!lenis) return;
+    lenis.raf(t);
+    const pos = lenis.scroll;
+    idle = pos !== lastPos ? 0 : idle + 1;
+    lastPos = pos;
+    if (idle < 20) lenisRaf = requestAnimationFrame(loop);
   };
-  lenisRaf = requestAnimationFrame(loop);
+  wakeLenis = () => {
+    idle = 0;
+    if (!lenisRaf && lenis) lenisRaf = requestAnimationFrame(loop);
+  };
+  for (const ev of ["wheel", "touchstart", "touchmove", "keydown", "scroll", "resize"]) {
+    window.addEventListener(ev, wakeLenis, { passive: true });
+  }
+  wakeLenis();
   return lenis;
 }
 
 export function destroyLenis() {
   cancelAnimationFrame(lenisRaf);
+  lenisRaf = 0;
+  for (const ev of ["wheel", "touchstart", "touchmove", "keydown", "scroll", "resize"]) {
+    window.removeEventListener(ev, wakeLenis);
+  }
+  wakeLenis = () => {};
   lenis?.destroy();
   lenis = null;
 }
 
 /** Jump to the top instantly (page change), with or without Lenis. */
 export function scrollToTop() {
-  if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
+  if (lenis) {
+    lenis.scrollTo(0, { immediate: true, force: true });
+    wakeLenis();
+  }
   window.scrollTo(0, 0);
 }
 
@@ -99,6 +122,7 @@ export function lockScroll(locked) {
   if (!lenis) return;
   if (locked) lenis.stop();
   else lenis.start();
+  wakeLenis();
 }
 
 /**
@@ -116,6 +140,7 @@ export function scrollToId(id, { focus = true, immediate = false } = {}) {
   };
   if (lenis) {
     lenis.scrollTo(el, { offset: id === "top" ? 0 : offset, duration: 1.2, immediate, force: immediate, onComplete: focusTarget });
+    wakeLenis();
   } else {
     el.scrollIntoView({ block: "start" });
     focusTarget();

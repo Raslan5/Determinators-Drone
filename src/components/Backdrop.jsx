@@ -6,11 +6,14 @@ import { useReducedMotion } from "../lib/hooks.js";
   - The wave is computed from viewport x and (viewport y + scrollY): one continuous pattern, no per-section offsets.
   - Background and dot colour come from the sections that carry [data-wave]: each one declares
     --wave-bg and --wave-dot in CSS; the canvas blends between their centres as you scroll.
-  - Cheap: sprite atlas, no per-dot trig, ~30 fps, paused in background tabs, DPR <= 2, ~14k dots max,
+  - Cheap: sprite atlas, no per-dot trig, ~30 fps, paused in background tabs and after 4 s without input, DPR <= 2, ~14k dots max,
     no allocations inside the frame loop. Reduced motion: still dots, colour follows the scroll only.
 */
 const LEVELS = 12;
 const FRAME_MS = 33;
+const MAX_DT_MS = 66; /* per-frame time cap: resuming continues the wave, no jump */
+const IDLE_MS = 4000; /* no input for this long: the loop stops until the next event */
+const WAKE = ["scroll", "wheel", "touchstart", "touchmove", "keydown", "pointermove"];
 const SPACING = 13;
 const RADIUS = 0.8;
 const MAX_DOTS = 14000;
@@ -36,7 +39,10 @@ export default function Backdrop() {
     let rows = 0;
     let cell = 0;
     let raf = 0;
-    let last = 0;
+    let prev = 0; /* previous rAF timestamp; 0 = loop was stopped */
+    let acc = 0; /* frame-pacing accumulator (ms) */
+    let sinceDraw = 0; /* capped ms since the last animated draw */
+    let animT = 0; /* accumulated animation time (s), frozen while stopped */
     let scrollY = 0;
     let stopsY = new Float32Array(0);
     let stopsC = new Float32Array(0); /* per stop: bg r,g,b, dot r,g,b */
@@ -153,7 +159,7 @@ export default function Backdrop() {
       applyColors();
       ctx.clearRect(0, 0, w, h);
       if (!cols || !atlas.width) return;
-      const t = reduced ? 0 : now / 1000;
+      const t = reduced ? 0 : animT;
       const sy = reduced ? 0 : scrollY;
       const a1 = t * 1.3;
       const a2 = t * 0.9;
@@ -192,7 +198,7 @@ export default function Backdrop() {
     };
 
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = 1;
       w = canvas.clientWidth || document.documentElement.clientWidth;
       h = canvas.clientHeight || window.innerHeight;
       const step = Math.max(SPACING, Math.sqrt((w * h) / MAX_DOTS));
@@ -230,18 +236,47 @@ export default function Backdrop() {
 
     const loop = (now) => {
       raf = 0;
-      if (document.hidden) return;
-      if (now - last >= FRAME_MS) {
-        last = now;
+      if (document.hidden || now - active > IDLE_MS) {
+        prev = 0;
+        acc = 0;
+        sinceDraw = 0;
+        return;
+      }
+      if (!prev) prev = now;
+      const dt = Math.min(now - prev, MAX_DT_MS);
+      prev = now;
+      acc += dt;
+      sinceDraw += dt;
+      if (acc >= FRAME_MS) {
+        acc -= FRAME_MS;
+        if (acc >= FRAME_MS) acc = 0; /* never catch up on late frames */
+        animT += sinceDraw / 1000;
+        sinceDraw = 0;
         draw(now);
       }
       raf = requestAnimationFrame(loop);
     };
+    let active = performance.now();
     const start = () => {
       if (!raf && !document.hidden) raf = requestAnimationFrame(loop);
     };
+    const wake = () => {
+      active = performance.now();
+      start();
+    };
     const onVis = () => {
-      if (!document.hidden) start();
+      if (document.hidden) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        prev = 0;
+        acc = 0;
+        sinceDraw = 0;
+        return;
+      }
+      prev = 0;
+      acc = 0;
+      sinceDraw = 0;
+      wake();
     };
     let sRaf = 0;
     const onScroll = () => {
@@ -260,10 +295,12 @@ export default function Backdrop() {
       ro.observe(document.body);
     }
     window.addEventListener("resize", resize);
+    if (!reduced) window.addEventListener("resize", wake);
     if (reduced) {
       window.addEventListener("scroll", onScroll, { passive: true });
     } else {
       document.addEventListener("visibilitychange", onVis);
+      WAKE.forEach((ev) => window.addEventListener(ev, wake, { passive: true }));
       start();
     }
 
@@ -273,7 +310,9 @@ export default function Backdrop() {
       cancelAnimationFrame(rRaf);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", wake);
       window.removeEventListener("scroll", onScroll);
+      WAKE.forEach((ev) => window.removeEventListener(ev, wake));
       ro?.disconnect();
     };
   }, [reduced]);

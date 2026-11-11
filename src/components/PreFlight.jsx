@@ -12,7 +12,7 @@ const POS = { FR: [283, 117], RL: [117, 283], FL: [117, 117], RR: [283, 283] };
 
 export function Calibration() {
   const [active, setActive] = useState(p.steps[0].id);
-  const photos = useMemo(() => inV2Folder("phase-1/ph1_hif_calibration").filter((x) => x.type === "image"), []);
+  const photos = useMemo(() => inV2Folder("phase-1/ph1_hif_calibration"), []);
   const step = p.steps.find((s) => s.id === active);
 
   return (

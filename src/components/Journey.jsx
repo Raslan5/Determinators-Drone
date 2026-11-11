@@ -41,7 +41,7 @@ export default function Journey({ id = "journey", renderStep2 = null, className 
 
 function Step({ n, step, side, children }) {
   const title = step.title;
-  const photos = n >= 3 && n <= 6 ? inV2Folder(`phase-1/ph1_step${String(n).padStart(2, "0")}`).filter((x) => x.type === "image") : [];
+  const photos = n >= 3 && n <= 6 ? inV2Folder(`phase-1/ph1_step${String(n).padStart(2, "0")}`) : [];
   const reduced = useReducedMotion();
   const ref = useRef(null);
   const [seen, setSeen] = useState(false);

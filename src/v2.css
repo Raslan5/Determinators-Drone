@@ -1951,24 +1951,6 @@ body {
   align-items: flex-start;
 }
 
-.photoroll__text {
-  padding: 1.25rem 1.5rem;
-  border-radius: var(--radius-box);
-  background: transparent; /* the panel is already the S6 orange */
-  font-size: var(--t-sm);
-}
-
-.photoroll__title {
-  margin: 0 2.5rem 0.75rem 0;
-  font-size: var(--t-xl);
-}
-
-.photoroll__head {
-  margin: 0 0 0.5rem;
-  color: color-mix(in srgb, var(--cube-ink) 90%, var(--cube));
-  font-size: var(--t-xs);
-}
-
 .photoroll__media {
   display: grid;
   min-width: 0;
@@ -2010,11 +1992,6 @@ body {
   box-shadow: 0 0 0 2px var(--paper); /* double ring, as on the orange card */
 }
 
-.photoroll__text {
-  max-width: 70ch;
-  order: 2;
-}
-
 @media (min-width: 900px) {
   .photoroll__track {
     transition: height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
@@ -2037,12 +2014,7 @@ body {
   }
 
   .photoroll__panel {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
     animation: photoroll-grow 0.5s cubic-bezier(0.65, 0, 0.35, 1) both;
-  }
-
-  .photoroll__text {
-    order: 0;
   }
 }
 
@@ -2067,7 +2039,7 @@ body {
   position: relative;
   display: grid;
   box-sizing: border-box;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.5rem;
   margin: -0.75rem; /* padding gives the focus ring room inside the clip */
   padding: 0.75rem;

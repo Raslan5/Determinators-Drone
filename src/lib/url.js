@@ -11,8 +11,8 @@ export function safeHref(u) {
   try {
     const p = new URL(u);
     const h = p.hostname;
-    if (p.protocol !== "https:" || !h) return null;
-    const validHost = h.includes(".") ? h.split(".").every((l, i, a) => l ? HOST_LABEL.test(l) : i === a.length - 1) : HOST_LABEL.test(h) || /^\[[0-9a-f:.]+\]$/i.test(h);
+    if (p.protocol !== "https:" || !h || p.username || p.password || /^https:\/\/[^/?#]*@/.test(u)) return null;
+    const validHost = h.includes(".") && h.split(".").every((l, i, a) => l ? HOST_LABEL.test(l) : i === a.length - 1);
     if (!validHost) return null;
     return { href: p.href, external: true };
   } catch {

@@ -47,3 +47,6 @@ vault/
 # Internal docs (local only, not published)
 /PROJECT_STATE.md
 /docs/
+
+# Personal data (team info, not published)
+/Team_info.md

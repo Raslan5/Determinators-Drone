@@ -2,7 +2,7 @@ import { brand, ui } from "../content.js";
 import { Reveal, SplitWords } from "./Reveal.jsx";
 import { inV2Folder } from "../lib/photos.js";
 
-/* Drop the drone photo in src/photos/home/home_title/ (PNG with transparent background; the first image is used) (e.g. hero-drone.png). */
+/* Drop the drone photo in src/photos/home/home_title/ (WebP with transparent background; the first image is used) (e.g. hero-drone.webp). */
 const heroPhoto = () => inV2Folder("home/home_title").find((x) => x.type === "image");
 
 /* Opening presentation: "Determinators presents [Drone name]". */
