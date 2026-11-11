@@ -65,13 +65,6 @@ const glyphs = {
       <rect x="26" y="26" width="12" height="12" rx="2" className="glyph-accent" />
     </>
   ),
-  log: (
-    <>
-      <path d="M10 10v44h46" />
-      <path d="M16 46l9-14 8 6 9-18 10 10" />
-      <path d="M16 40h36" strokeDasharray="3 4" />
-    </>
-  ),
   person: (
     <>
       <circle cx="32" cy="24" r="10" />

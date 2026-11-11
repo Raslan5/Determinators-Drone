@@ -1,16 +1,17 @@
-import { project } from "../content.js";
-import { Say } from "../lib/mode.jsx";
-import { Rich } from "../lib/text.jsx";
+import { GhostWord, SplitWords } from "./Reveal.jsx";
+import { ghosts, ui, projectV2 as project } from "../content.js";
+import { Rich, fill } from "../lib/text.jsx";
 
-const STATUS = { done: "Done", current: "In progress", upcoming: "" };
+const STATUS = ui.project.status;
 
 export default function Project() {
   return (
-    <section id="project" className="section surface-ink" data-surface="ink">
+    <section id="project" className="section project wave surface-paper" data-surface="paper" data-wave>
+      <GhostWord text={ghosts.project} />
       <div className="wrap">
         <div className="section-head">
-          <h2 className="h2">{project.title}</h2>
-          <Say v={project.lead} as="p" className="lead" />
+          <SplitWords as="h2" className="h2" text={project.title} />
+          <p className="lead"><Rich text={project.lead} /></p>
         </div>
 
         <ol className="phases">
@@ -20,12 +21,11 @@ export default function Project() {
                 <span>{i + 1}</span>
               </div>
               <p className="phase__meta">
-                <span className="sr-only">Phase {i + 1}. </span>
-                <Rich text={ph.when} />
+                <span className="sr-only">{fill(ui.project.phase, { n: i + 1 })}</span>
                 {STATUS[ph.status] ? <span className="phase__status">{STATUS[ph.status]}</span> : null}
               </p>
               <h3 className="phase__title">{ph.title}</h3>
-              <Say v={{ simple: ph.simple, tech: ph.tech }} as="p" className="phase__text" />
+              <p className="phase__text"><Rich text={ph.text} /></p>
             </li>
           ))}
         </ol>

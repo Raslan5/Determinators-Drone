@@ -2,30 +2,19 @@ HOW TO ADD YOUR PHOTOS
 ======================
 
 Drop files into these folders. The website finds them by itself:
-no code to change.
+no code to change. One folder per section, under src/photos/:
 
-steps/    Photos of the build, named with the step number first.
-          01-the-box.jpg, 01-all-parts.jpg   -> step 1 (Unboxing the kit)
-          02-binding-the-radio.jpg           -> step 2 (Radio control)
-          03-arms-on-the-body.jpg            -> step 3 ...
-          The first photo of each step is shown large, the rest as small
-          thumbnails. The words after the number become the caption:
-          "03-arms-on-the-body.jpg" is shown as "Arms on the body".
+home/home_title/      Drone cut-out for the title (PNG, transparent).
+home/home_team/       Portraits: 1.jpg, 2.jpg, 3.jpg (same order as the team in src/content.js).
+home/home_intro/, home/home_prwph1/   Other home sections.
+phase-1/ph1_step01 ... ph1_step06/    Photos of each build step.
+phase-1/ph1_flight/, ph1_hif_*/       Flight and "how it flies" photos and videos (.mp4).
+parts_drone/          Cut-out images of the kit parts.
 
-flight/   Photos and short videos (.mp4) of the drone flying.
-          They go into the gallery in name order.
-
-team/     Portraits: 1.jpg, 2.jpg, 3.jpg
-          (same order as the team members in src/content.js).
-          They are shown in black and white to match the design.
-
-logs/     Screenshots of your log graphs from Mission Planner.
+Files show in name order. The words after a leading number become the
+caption: "03-arms-on-the-body.jpg" is shown as "Arms on the body".
 
 TIPS
 ----
-- Use .jpg, .png or .webp. iPhone .heic photos do not work in most
-  browsers: export them as JPG first (or set the iPhone camera to
-  Settings > Camera > Formats > Most Compatible).
-- Phone photos are big. Resize them to about 2000 pixels wide so the site
-  loads fast. Keep each video under 20 MB.
-- Do not create folders inside these folders.
+- Use .jpg, .png or .webp. iPhone .heic does not work in most browsers.
+- Resize photos to about 2000 px wide. Keep each video under 20 MB.

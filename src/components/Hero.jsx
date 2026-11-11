@@ -1,6 +1,6 @@
+import { GhostWord, SplitWords } from "./Reveal.jsx";
+import { ghosts, hero, team, ui } from "../content.js";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { hero, team } from "../content.js";
-import { ModeSwitch, Say, usePick } from "../lib/mode.jsx";
 import { Rich, joinNames } from "../lib/text.jsx";
 import { useReducedMotion } from "../lib/hooks.js";
 import { ASSEMBLED, DroneDefs, Part } from "./DroneArt.jsx";
@@ -16,8 +16,7 @@ const KNOLL = {
   plate: [315, 120, 0],
   cube: [330, 315, 0],
   gps: [432, 315, 0],
-  rx: [530, 293, 0],
-  telem: [520, 343, 0],
+  radio: [525, 318, 0],
   "motor-FR": [52, 315, 0],
   "motor-RL": [112, 315, 0],
   "motor-FL": [172, 315, 0],
@@ -42,8 +41,7 @@ const TIMING = {
   "motor-RR": [0.46, 0.74],
   cube: [0.5, 0.74],
   gps: [0.56, 0.8],
-  rx: [0.58, 0.82],
-  telem: [0.6, 0.84],
+  radio: [0.58, 0.82],
   "prop-FR": [0.72, 0.92],
   "prop-RL": [0.76, 0.95],
   "prop-FL": [0.8, 0.98],
@@ -57,7 +55,7 @@ const LABELS = [
   { key: "motors", x: 142, y: 368 },
   { key: "cube", x: 330, y: 368 },
   { key: "gps", x: 432, y: 368 },
-  { key: "radios", x: 528, y: 384 },
+  { key: "radio", x: 528, y: 384 },
   { key: "props", x: 290, y: 562 },
 ];
 
@@ -81,7 +79,6 @@ function stageIndex(p, airborne) {
 
 export default function Hero() {
   const reduced = useReducedMotion();
-  const pick = usePick();
   const [p, setP] = useState(reduced ? 1 : 0);
   const [rotor, setRotor] = useState("off"); // off | spooling | flying
   const timers = useRef({ raf: 0, timeouts: [] });
@@ -141,20 +138,15 @@ export default function Hero() {
   const names = joinNames(team.members.map((m) => m.name));
 
   return (
-    <section id="top" className="hero surface-paper" data-surface="paper">
+    <section id="top" className="hero wave surface-paper" data-surface="paper" data-wave>
+      <GhostWord text={ghosts.top} />
       <div className="wrap hero__grid">
         <div className="hero__text">
-          <h1 className="hero__title">{hero.title}</h1>
-          <Say v={hero.intro} as="p" className="hero__intro" />
+          <SplitWords as="h1" className="hero__title" text={hero.title} gate delay={150} />
+          <p className="hero__intro"><Rich text={hero.intro} /></p>
           <p className="hero__by">
-            By <Rich text={names} />
+            {ui.hero.by} <Rich text={names} />
           </p>
-          <div className="hero__mode">
-            <p className="hero__mode-label" id="hero-mode-label">
-              Read this site
-            </p>
-            <ModeSwitch size="large" labels={hero.modes} />
-          </div>
         </div>
 
         <figure className="hero__art">
@@ -162,7 +154,7 @@ export default function Hero() {
             viewBox="0 0 600 600"
             className={`kit kit--${rotor}`}
             role="img"
-            aria-label="Drawing of the drone kit: the parts laid out on a table assemble themselves into a quadcopter, which then takes off."
+            aria-label={ui.hero.artLabel}
           >
             <DroneDefs prefix="kit" />
             <rect width="600" height="600" fill="url(#kit-grid)" />
@@ -171,7 +163,7 @@ export default function Hero() {
             <g className="kit-labels" style={{ opacity: labelOpacity }} aria-hidden="true">
               {LABELS.map((l) => (
                 <text key={l.key} x={l.x} y={l.y} textAnchor="middle">
-                  {pick(hero.kitLabels[l.key])}
+                  {hero.kitLabels[l.key]}
                 </text>
               ))}
             </g>
@@ -203,10 +195,10 @@ export default function Hero() {
           </svg>
 
           <figcaption className="hero__controls">
-            <Say v={stage} as="p" className="hero__stage" />
+            <p className="hero__stage"><Rich text={stage} /></p>
             <div className="scrub">
               <label htmlFor="assembly" className="scrub__label">
-                Assembly
+                {ui.hero.scrub}
               </label>
               <input
                 id="assembly"
@@ -224,7 +216,7 @@ export default function Hero() {
               </output>
               <button type="button" className="btn btn--ghost" onClick={play}>
                 <Icon name="restart" size={18} />
-                <span>Replay</span>
+                <span>{ui.hero.replay}</span>
               </button>
             </div>
           </figcaption>
